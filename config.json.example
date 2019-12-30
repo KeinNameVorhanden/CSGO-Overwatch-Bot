@@ -25,5 +25,10 @@
 	},
 	"richPresence": {
 		"steam_display": "#display_overwatch"
-	}
+	},
+	"telegram": {
+		"token": "Inster Telegram Token from Botfather",
+		"chatid": Insert ChatID
+    }
+
 }
