@@ -14,16 +14,21 @@ const Helper = require("./helpers/Helper.js");
 const GameCoordinator = require("./helpers/GameCoordinator.js");
 const config = require("./config.json");
 
+const telebot = require("node-telegram-bot-api");
+const token = config.telegram.token;
+const chatid = config.telegram.chatid;
+const bot = new telebot(token)
 const steamUser = new SteamUser();
 let csgoUser = undefined;
 
+/*
 process.on("unhandledRejection", (reason, promise) => {
-	console.error("A request failed to run. Github, Steam or CSGO might currently be offline. Logging out...");
-
+	console.error("A request failed to run. Github, Telegram, Steam or CSGO might currently be offline. Logging out...");
+    bot.sendMessage(chatid, "A request failed to run. Github, Telegram, Steam or CSGO might currently be offline. Logging out...")
 	// The process should exit automatically once Steam has successfully logged off
 	steamUser.logOff();
 });
-
+*/
 let data = {
 	casesCompleted: 0,
 	total: {
@@ -49,6 +54,12 @@ let data = {
 		aimbot_infractions: [],
 		AFKing_infractions: [],
 		Wallhack_infractions: []
+	},
+	owndata: {
+		steamid64: 0,
+		aimbotconvict: false, 
+		wallhackconvict: false,
+		afkconvict: false
 	}
 };
 
@@ -136,6 +147,7 @@ steamUser.on("loggedOn", async () => {
 	console.log("We are " + lang.Tokens["skillgroup_" + rank.rank_id] + " with " + rank.wins + " win" + (rank.wins === 1 ? "" : "s"));
 	if (rank.rank_id < 7 || rank.wins < 150) {
 		console.log((rank.rank_id < 7 ? "Our rank is too low" : "We do not have enough wins") + " in order to request Overwatch cases. You need at least 150 wins and " + lang.Tokens["skillgroup_7"] + ".");
+		bot.sendMessage(chatid, "WE LOST OUR RANK!");
 		steamUser.logOff();
 		return;
 	}
@@ -187,7 +199,9 @@ async function doOverwatchCase() {
 			return;
 		}
 		data.curcasetempdata.sid = sid;
-
+        
+        bot.sendMessage(chatid, "Getting a new OW-Case!");
+        
 		let r = request(caseUpdate.caseurl);
 		r.on("response", (res) => {
 			res.pipe(fs.createWriteStream("./demofile.bz2")).on("close", async () => {
@@ -323,10 +337,12 @@ async function doOverwatchCase() {
 									convictionObj.rpt_wallhack = 1;
 
 									console.log("Suspect is already banned. Forcefully convicting...");
+									bot.sendMessage(chatid, "Suspect is already banned. Forcing conviction!");
 
 									data.curcasetempdata.wasAlreadyConvicted = true;
 								} else {
-									console.log("Suspect has not been banned yet according to the Steam API");
+									console.log("According to the Steam API the suspect has not been banned yet.");
+									bot.sendMessage(chatid, "According to the Steam API the suspect has not been banned yet.");
 
 									data.curcasetempdata.wasAlreadyConvicted = false;
 								}
@@ -340,7 +356,13 @@ async function doOverwatchCase() {
 
 								await new Promise(r => setTimeout(r, (timer * 1000)));
 							}
-
+                            
+							if (data.curcasetempdata.aimbot_infractions.length > config.verdict.maxAimbot){data.owndata.aimbotconvict = true}else{data.owndata.aimbotconvict = false}
+							if (data.curcasetempdata.Wallhack_infractions.length > config.verdict.maxWallKills){data.owndata.wallhackconvict = true}else{data.owndata.wallhackconvict = false}
+							if (data.curcasetempdata.AFKing_infractions.length > config.verdict.maxAFKing){data.owndata.afkconvict = true}else{data.owndata.afkconvict = false}
+							
+							data.owndata.steamid64 = (data.curcasetempdata.sid ? data.curcasetempdata.sid.getSteamID64() : 0);
+							
 							// Once we finished analysing the demo send the results
 							let caseUpdate2 = await csgoUser.sendMessage(
 								730,
@@ -368,11 +390,26 @@ async function doOverwatchCase() {
 
 							data.total.endTimestamp = Date.now();
 							data.casesCompleted++;
-
+                            
+                            
 							// Print logs
 							console.log("Internal ID: " + data.casesCompleted);
 							console.log("CaseID: " + caseUpdate2.caseid);
 							console.log("Suspect: " + (data.curcasetempdata.sid ? data.curcasetempdata.sid.getSteamID64() : 0));
+							if (data.owndata.aimbotconvict == true || data.owndata.wallhackconvict == true || data.owndata.afkconvict == true){
+                                CTr = data.owndata.steamid64 + "\n" + "AIM: " + data.owndata.aimbotconvict + "\n" +  "WH: " + data.owndata.wallhackconvict + "\n" +  "AFK: " + data.owndata.afkconvict + "\n" + "https://steamcommunity.com/profiles/" + data.owndata.steamid64;
+								bot.sendMessage(chatid, CTr);
+								console.log("Convicted for:");
+								console.log("   Aimbotting: " + data.owndata.aimbotconvict);
+								console.log("   Wallhacking: " + data.owndata.wallhackconvict);
+								console.log("   AFKing: " + data.owndata.afkconvict);
+                            } else {
+								if (data.curcasetempdata.wasAlreadyConvicted == true)
+									bot.sendMessage(chatid, "Forcing conviction since the suspect was already banned!" + "\n" + "If parsing doesnt detected anything it will convict for Wallhack." + "\n" + "\n" + "https://steamcommunity.com/profiles/" + data.owndata.steamid64);
+								else {
+									bot.sendMessage(chatid, "Suspect wasnt raging" + "\n" + "\n" + "https://steamcommunity.com/profiles/" + data.owndata.steamid64);
+								}
+							}
 							console.log("Infractions:");
 							console.log("	Aimbot: " + data.curcasetempdata.aimbot_infractions.length);
 							console.log("	Wallhack: " + data.curcasetempdata.Wallhack_infractions.length);
@@ -384,7 +421,7 @@ async function doOverwatchCase() {
 							console.log("	Unpacking: " + parseInt((data.unpacking.endTimestamp - data.unpacking.startTimestamp) / 1000) + "s");
 							console.log("	Parsing: " + parseInt((data.parsing.endTimestamp - data.parsing.startTimestamp) / 1000) + "s");
 							console.log("	Throttle: " + caseUpdate2.throttleseconds + "s");
-
+                            
 							if (config.verdict.writeLog) {
 								if (!fs.existsSync("./cases")) {
 									fs.mkdirSync("./cases");
