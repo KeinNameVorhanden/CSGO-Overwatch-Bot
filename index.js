@@ -21,14 +21,13 @@ const bot = new telebot(token)
 const steamUser = new SteamUser();
 let csgoUser = undefined;
 
-/*
 process.on("unhandledRejection", (reason, promise) => {
-	console.error("A request failed to run. Github, Telegram, Steam or CSGO might currently be offline. Logging out...");
-    bot.sendMessage(chatid, "A request failed to run. Github, Telegram, Steam or CSGO might currently be offline. Logging out...")
+	console.error("An error occurred. Logging out...");
+    bot.sendMessage(chatid, "An error occurred. Logging out...\n\n" + reason)
 	// The process should exit automatically once Steam has successfully logged off
 	steamUser.logOff();
 });
-*/
+
 let data = {
 	casesCompleted: 0,
 	total: {
@@ -82,7 +81,9 @@ steamUser.logOn(logonSettings);
 
 steamUser.on("loggedOn", async () => {
 	console.log("Successfully logged into " + steamUser.steamID.toString());
+
 	steam_persona = config.account.steam_persona;
+
 	if (steam_persona == "Offline") {
 		steamUser.setPersona(SteamUser.EPersonaState.Offline);
 	}
@@ -178,8 +179,10 @@ steamUser.on("loggedOn", async () => {
 	}
 
 	steam_name = steamUser.accountInfo.name;
+	bot.sendMessage(chatid, "[" + steam_name + "] Persona set to: " + steam_persona);
+
 	console.log("[" + steam_name + "] Rank: " + lang.Tokens["skillgroup_" + rank.rank_id] + " | " + rank.wins + " Win" + (rank.wins === 1 ? "" : "s"));
-	bot.sendMessage(chatid, "[" + steam_name + "] Rank: " + lang.Tokens["skillgroup_" + rank.rank_id] + " | " + rank.wins + " Win" + (rank.wins === 1 ? "" : "s" + "\nPersona set to: " + steam_persona));
+	bot.sendMessage(chatid, "[" + steam_name + "] Rank: " + lang.Tokens["skillgroup_" + rank.rank_id] + " | " + rank.wins + " Win" + (rank.wins === 1 ? "" : "s"));
 
 	if (rank.rank_id < 7 || rank.wins < 150) {
 		console.log((rank.rank_id < 7 ? "Our rank is too low" : "We do not have enough wins") + " in order to request Overwatch cases. You need at least 150 wins and " + lang.Tokens["skillgroup_7"] + ".");
