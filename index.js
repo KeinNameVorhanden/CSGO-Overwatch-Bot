@@ -72,12 +72,45 @@ if (config.account.sharedSecret && config.account.sharedSecret.length > 5) {
 	logonSettings.twoFactorCode = SteamTotp.getAuthCode(config.account.sharedSecret);
 }
 
+function ms2readable(millis) {
+	var minutes = Math.floor(millis / 60000);
+	var seconds = ((millis % 60000) / 1000).toFixed(0);
+	return (seconds == 60 ? (minutes+1) + ":00" : minutes + ":" + (seconds < 10 ? "0" : "") + seconds);
+}
+
 steamUser.logOn(logonSettings);
 
 steamUser.on("loggedOn", async () => {
 	console.log("Successfully logged into " + steamUser.steamID.toString());
-	steamUser.setPersona(SteamUser.EPersonaState.Online);
-
+	steam_persona = config.account.steam_persona;
+	if (steam_persona == "Offline") {
+		steamUser.setPersona(SteamUser.EPersonaState.Offline);
+	}
+	else if (steam_persona == "Online") {
+		steamUser.setPersona(SteamUser.EPersonaState.Online);
+	}
+	else if (steam_persona == "Busy") {
+		steamUser.setPersona(SteamUser.EPersonaState.Busy);
+	}
+	else if (steam_persona == "Away") {
+		steamUser.setPersona(SteamUser.EPersonaState.Away);
+	}
+	else if (steam_persona == "Snooze") {
+		steamUser.setPersona(SteamUser.EPersonaState.Snooze);
+	}
+	else if (steam_persona == "LookingToTrade") {
+		steamUser.setPersona(SteamUser.EPersonaState.LookingToTrade);
+	}
+	else if (steam_persona == "LookingToPlay") {
+		steamUser.setPersona(SteamUser.EPersonaState.LookingToPlay);
+	}
+	else if (steam_persona == "Invisible") {
+		steamUser.setPersona(SteamUser.EPersonaState.Invisible);
+	}
+	else {
+		steamUser.setPersona(SteamUser.EPersonaState.Offline);
+	}
+	
 	console.log("Checking protobufs...");
 	let foundProtobufs = Helper.verifyProtobufs();
 	if (foundProtobufs) {
@@ -144,10 +177,13 @@ steamUser.on("loggedOn", async () => {
 		rank = rank.rankings[0];
 	}
 
-	console.log("We are " + lang.Tokens["skillgroup_" + rank.rank_id] + " with " + rank.wins + " win" + (rank.wins === 1 ? "" : "s"));
+	steam_name = steamUser.accountInfo.name;
+	console.log("[" + steam_name + "] Rank: " + lang.Tokens["skillgroup_" + rank.rank_id] + " | " + rank.wins + " Win" + (rank.wins === 1 ? "" : "s"));
+	bot.sendMessage(chatid, "[" + steam_name + "] Rank: " + lang.Tokens["skillgroup_" + rank.rank_id] + " | " + rank.wins + " Win" + (rank.wins === 1 ? "" : "s" + "\nPersona set to: " + steam_persona));
+
 	if (rank.rank_id < 7 || rank.wins < 150) {
 		console.log((rank.rank_id < 7 ? "Our rank is too low" : "We do not have enough wins") + " in order to request Overwatch cases. You need at least 150 wins and " + lang.Tokens["skillgroup_7"] + ".");
-		bot.sendMessage(chatid, "WE LOST OUR RANK!");
+		bot.sendMessage(chatid, "[" + steam_name + "] WE LOST OUR RANK!");
 		steamUser.logOff();
 		return;
 	}
@@ -200,7 +236,7 @@ async function doOverwatchCase() {
 		}
 		data.curcasetempdata.sid = sid;
         
-        bot.sendMessage(chatid, "Getting a new OW-Case!");
+        bot.sendMessage(chatid, "[" + steam_name + "] Getting a new OW-Case!");
         
 		let r = request(caseUpdate.caseurl);
 		r.on("response", (res) => {
@@ -337,12 +373,12 @@ async function doOverwatchCase() {
 									convictionObj.rpt_wallhack = 1;
 
 									console.log("Suspect is already banned. Forcefully convicting...");
-									bot.sendMessage(chatid, "Suspect is already banned. Forcing conviction!");
+									bot.sendMessage(chatid, "[" + steam_name + "] Suspect is already banned. Forcing conviction...");
 
 									data.curcasetempdata.wasAlreadyConvicted = true;
 								} else {
 									console.log("According to the Steam API the suspect has not been banned yet.");
-									bot.sendMessage(chatid, "According to the Steam API the suspect has not been banned yet.");
+									bot.sendMessage(chatid, "[" + steam_name + "] According to the Steam API the suspect has not been banned yet.");
 
 									data.curcasetempdata.wasAlreadyConvicted = false;
 								}
@@ -352,7 +388,9 @@ async function doOverwatchCase() {
 								// Wait this long before sending the request, if we parse the demo too fast the GC ignores us
 								let timer = parseInt((config.parsing.minimumTime * 1000) - (data.parsing.endTimestamp - data.parsing.startTimestamp)) / 1000;
 
-								console.log("Waiting " + timer + " second" + (timer === 1 ? "" : "s") + " to avoid the GC ignoring us");
+								timer_set = "[" + steam_name + "] Waiting " + timer + " second" + (timer === 1 ? "" : "s") + " to avoid the GC ignoring us";
+								console.log(timer_set);
+								bot.sendMessage(chatid, timer_set);
 
 								await new Promise(r => setTimeout(r, (timer * 1000)));
 							}
@@ -396,18 +434,19 @@ async function doOverwatchCase() {
 							console.log("Internal ID: " + data.casesCompleted);
 							console.log("CaseID: " + caseUpdate2.caseid);
 							console.log("Suspect: " + (data.curcasetempdata.sid ? data.curcasetempdata.sid.getSteamID64() : 0));
+							tg_chatoutput = data.owndata.steamid64 + "\n" + "AIM: " + data.owndata.aimbotconvict + " (" + data.curcasetempdata.aimbot_infractions.length + ")" + "\n" +  "WH: " + data.owndata.wallhackconvict + " (" + data.curcasetempdata.Wallhack_infractions.length + ")" + "\n" +  "AFK: " + data.owndata.afkconvict + " (" + data.curcasetempdata.AFKing_infractions.length + ")" + "\n" + "https://steamcommunity.com/profiles/" + data.owndata.steamid64;
+							
 							if (data.owndata.aimbotconvict == true || data.owndata.wallhackconvict == true || data.owndata.afkconvict == true){
-                                CTr = data.owndata.steamid64 + "\n" + "AIM: " + data.owndata.aimbotconvict + "\n" +  "WH: " + data.owndata.wallhackconvict + "\n" +  "AFK: " + data.owndata.afkconvict + "\n" + "https://steamcommunity.com/profiles/" + data.owndata.steamid64;
-								bot.sendMessage(chatid, CTr);
+								bot.sendMessage(chatid, tg_chatoutput);
 								console.log("Convicted for:");
 								console.log("   Aimbotting: " + data.owndata.aimbotconvict);
 								console.log("   Wallhacking: " + data.owndata.wallhackconvict);
 								console.log("   AFKing: " + data.owndata.afkconvict);
                             } else {
 								if (data.curcasetempdata.wasAlreadyConvicted == true)
-									bot.sendMessage(chatid, "Forcing conviction since the suspect was already banned!" + "\n" + "If parsing doesnt detected anything it will convict for Wallhack." + "\n" + "\n" + "https://steamcommunity.com/profiles/" + data.owndata.steamid64);
+									bot.sendMessage(chatid, "Forcing conviction since the suspect was already banned!" + "\n" + "\n" + "https://steamcommunity.com/profiles/" + data.owndata.steamid64);
 								else {
-									bot.sendMessage(chatid, "Suspect wasnt raging" + "\n" + "\n" + "https://steamcommunity.com/profiles/" + data.owndata.steamid64);
+									bot.sendMessage(chatid, tg_chatoutput + "\n\nSuspect wasnt raging, no conviction was sent.");
 								}
 							}
 							console.log("Infractions:");
@@ -456,8 +495,11 @@ async function doOverwatchCase() {
 								return;
 							}
 
+							timeout_value = ((caseUpdate2.throttleseconds + 1) * 1000);
+							bot.sendMessage(chatid, "[" + steam_name + "] Requesting a new overwatch case after: " + ms2readable(timeout_value) + " Minutes");
+
 							// Request a overwatch case after the time has run out
-							setTimeout(doOverwatchCase, ((caseUpdate2.throttleseconds + 1) * 1000));
+							setTimeout(doOverwatchCase, timeout_value);
 						});
 					});
 				});

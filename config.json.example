@@ -2,7 +2,8 @@
 	"account": {
 		"username": "ExampleUsername",
 		"password": "ExamplePassword",
-		"sharedSecret": ""
+		"sharedSecret": "",
+		"steam_persona": "Offline/Online (Any steam persona)"
 	},
 	"parsing": {
 		"steamWebAPIKey": "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890",
