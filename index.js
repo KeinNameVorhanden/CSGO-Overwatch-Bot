@@ -1,3 +1,8 @@
+const config = require("./config.json");
+const telebot = require("node-telegram-bot-api");
+const token = config.telegram.token;
+const chatid = config.telegram.chatid;
+const bot = new telebot(token);
 const SteamUser = require("steam-user");
 const SteamTotp = require("steam-totp");
 const fs = require("fs");
@@ -5,19 +10,11 @@ const request = require("request");
 const demofile = require("demofile");
 const bz2 = require("unbzip2-stream");
 const SteamID = require("steamid");
-
 const Aimbot = require("./detectors/aimbot.js");
 const AFKing = require("./detectors/AFKing.js");
 const Wallhack = require("./detectors/wallhack.js");
-
 const Helper = require("./helpers/Helper.js");
 const GameCoordinator = require("./helpers/GameCoordinator.js");
-const config = require("./config.json");
-
-const telebot = require("node-telegram-bot-api");
-const token = config.telegram.token;
-const chatid = config.telegram.chatid;
-const bot = new telebot(token)
 const steamUser = new SteamUser();
 let csgoUser = undefined;
 
@@ -437,10 +434,10 @@ async function doOverwatchCase() {
 							console.log("Internal ID: " + data.casesCompleted);
 							console.log("CaseID: " + caseUpdate2.caseid);
 							console.log("Suspect: " + (data.curcasetempdata.sid ? data.curcasetempdata.sid.getSteamID64() : 0));
-							tg_chatoutput = data.owndata.steamid64 + "\n" + "AIM: " + data.owndata.aimbotconvict + " (" + data.curcasetempdata.aimbot_infractions.length + ")" + "\n" +  "WH: " + data.owndata.wallhackconvict + " (" + data.curcasetempdata.Wallhack_infractions.length + ")" + "\n" +  "AFK: " + data.owndata.afkconvict + " (" + data.curcasetempdata.AFKing_infractions.length + ")" + "\n" + "https://steamcommunity.com/profiles/" + data.owndata.steamid64;
+							tg_chatoutput = "*" + data.owndata.steamid64 + "*\n" + "__AIM__: " + data.owndata.aimbotconvict + " (" + data.curcasetempdata.aimbot_infractions.length + ")" + "\n" +  "__WH__: " + data.owndata.wallhackconvict + " (" + data.curcasetempdata.Wallhack_infractions.length + ")" + "\n" +  "__AFK__: " + data.owndata.afkconvict + " (" + data.curcasetempdata.AFKing_infractions.length + ")" + "\n" + "https://steamcommunity.com/profiles/" + data.owndata.steamid64;
 							
 							if (data.owndata.aimbotconvict == true || data.owndata.wallhackconvict == true || data.owndata.afkconvict == true){
-								bot.sendMessage(chatid, tg_chatoutput);
+								bot.sendMessage(chatid, tg_chatoutput, { parse_mode: 'Markdown' });
 								console.log("Convicted for:");
 								console.log("   Aimbotting: " + data.owndata.aimbotconvict);
 								console.log("   Wallhacking: " + data.owndata.wallhackconvict);
@@ -449,7 +446,7 @@ async function doOverwatchCase() {
 								if (data.curcasetempdata.wasAlreadyConvicted == true)
 									bot.sendMessage(chatid, "Forcing conviction since the suspect was already banned!" + "\n" + "\n" + "https://steamcommunity.com/profiles/" + data.owndata.steamid64);
 								else {
-									bot.sendMessage(chatid, tg_chatoutput + "\n\nSuspect wasnt raging, no conviction was sent.");
+									bot.sendMessage(chatid, tg_chatoutput + "\n\nSuspect wasnt raging, no conviction was sent.", { parse_mode: 'Markdown' });
 								}
 							}
 							console.log("Infractions:");
@@ -522,4 +519,3 @@ async function doOverwatchCase() {
 		setTimeout(doOverwatchCase, (30 * 1000));
 	}
 }
-
