@@ -20,7 +20,7 @@
 		"writeLog": true,
 		"backupDemo": false,
 		"maxVerdicts": 0,
-		"maxAimbot": 10,
+		"maxAimbot": 13,
 		"maxWallKills": 7,
 		"maxAFKing": 3
 	},
@@ -29,8 +29,7 @@
 	},
 	"telegram": {
 		"token": "Inster Telegram Token from Botfather",
-		"chatid": Insert ChatID
+		"chatid": "Insert ChatID"
     }
-
 }
 
