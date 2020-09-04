@@ -1,35 +1,45 @@
 {
 	"account": {
-		"username": "ExampleUsername",
-		"password": "ExamplePassword",
+		"username": "SteamUsername",
+		"password": "SteamPassword",
 		"sharedSecret": "",
-		"steam_persona": "Offline/Online (Any steam persona)"
+		"steam_persona": "Invisible"
 	},
 	"parsing": {
-		"steamWebAPIKey": "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890",
+		"forceConvictOnPreviousBan": 3,
 		"minimumTime": 240,
 		"aimbot": {
 			"maxTicks": 10,
 			"threshold": 1.0
 		},
 		"afking": {
-			"radius": 80
+			"radius": 50
 		}
+	},
+	"detectors": {
+		"Aimbot": true,
+		"Wallhack": true,
+		"Griefing": true,
+		"AFKing": true,
+		"AntiAim": true
 	},
 	"verdict": {
 		"writeLog": true,
-		"backupDemo": false,
+		"backupDemo": true,
+		"printScoreboard": true,
+		"logWithEmojis": true,
 		"maxVerdicts": 0,
-		"maxAimbot": 13,
-		"maxWallKills": 7,
-		"maxAFKing": 3
-	},
-	"richPresence": {
-		"steam_display": "#display_overwatch"
+
+		"minAimbot": 13,
+		"minWallKills": 7,
+		"minAFKing": 5,
+		"minAntiAim": 10,
+		"minTeamKills": 2,
+		"minTeamDamage": 150
 	},
 	"telegram": {
-		"token": "Inster Telegram Token from Botfather",
-		"chatid": "Insert ChatID"
+		"enabled": false,
+		"token": "Telegram Token (@Botfather)",
+		"chatid": "Chat you want to get the posts in"
     }
 }
-
