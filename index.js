@@ -158,7 +158,7 @@ steam.on("loggedOn", async () => {
 		steam.setPersona(SteamUser.EPersonaState.Invisible);
 	}
 	else {
-		steam.setPersona(SteamUser.EPersonaState.Offline);
+		steam.setPersona(SteamUser.EPersonaState.Invisible);
 	}
 	if(tg_enabled === true){
 	if (steam_persona == "Offline") {
