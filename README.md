@@ -29,6 +29,7 @@ NodeJS 12+ version
   - `username`: Your Steam account name
   - `password`: Your Steam password
   - `sharedSecret`: Optional shared secret to generate Mobile Steam Guard codes. Leave empty to enter manually.
+  - `steam_persona`: Sets the Steam Persona State (eg. Online/Offline).
 - `parsing`
   - `forceConvictOnPreviousBan`: When parsing is done the Suspect's Steam profile is checked for previous bans, if the previous ban is younger than this number of days it will forcefully convict the suspect for wallhack. Use `-1` to disable.
   - `minimumTime`: Minimum amount of time in seconds for parsing to take before sending verdict to CSGO. If too low CSGO will ignore our verdict.
@@ -56,3 +57,7 @@ NodeJS 12+ version
   - `minAntiAim`: Minimum amount of anti-aim infractions the suspect must have before convicting for other
   - `minTeamKills`: Minimum amount of team kills required to convict for griefing
   - `minTeamDamage`: Minimum amount of team damage required to convict for griefing
+- `telegram`
+  - `enabled`: Should the telegram bot be used?
+  - `token`: Telegram Token (@Botfather)
+  - `chatid`: Chat you want to get the posts in
