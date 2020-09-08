@@ -76,9 +76,34 @@ let timings = {
 steam.on("loggedOn", async () => {
 	console.log("Successfully logged into " + steam.steamID.toString());
 
-	steam.setPersona(SteamUser.EPersonaState.Online);
-
-	
+	steam_persona = config.account.steam_persona;
+	if (steam_persona == "Offline") {
+		steam.setPersona(SteamUser.EPersonaState.Offline);
+	}
+	else if (steam_persona == "Online") {
+		steam.setPersona(SteamUser.EPersonaState.Online);
+	}
+	else if (steam_persona == "Busy") {
+		steam.setPersona(SteamUser.EPersonaState.Busy);
+	}
+	else if (steam_persona == "Away") {
+		steam.setPersona(SteamUser.EPersonaState.Away);
+	}
+	else if (steam_persona == "Snooze") {
+		steam.setPersona(SteamUser.EPersonaState.Snooze);
+	}
+	else if (steam_persona == "LookingToTrade") {
+		steam.setPersona(SteamUser.EPersonaState.LookingToTrade);
+	}
+	else if (steam_persona == "LookingToPlay") {
+		steam.setPersona(SteamUser.EPersonaState.LookingToPlay);
+	}
+	else if (steam_persona == "Invisible") {
+		steam.setPersona(SteamUser.EPersonaState.Invisible);
+	}
+	else {
+		steam.setPersona(SteamUser.EPersonaState.Invisible);
+	}
 
 	console.log("Establishing CSGO GameCoordinator connection...");
 	steam.gamesPlayed([730]);
@@ -112,7 +137,8 @@ steam.on("loggedOn", async () => {
 	mmWelcome = protobufs.decodeProto("CMsgGCCStrike15_v2_MatchmakingGC2ClientHello", mmWelcome);
 
 	let rank = mmWelcome.ranking;
-	if (rank.rank_type_id !== 6) { // Competitive ID
+	//console.log("Debug: " .. rank);
+	if (rank.rank_type_id !== 6 && rank.rank_type_id !== 'undefined') { // Competitive ID
 		rank = await coordinator.sendMessage(
 			730,
 			protobufs.data.csgo.ECsgoGCMsg.k_EMsgGCCStrike15_v2_ClientGCRankUpdate,
@@ -131,41 +157,18 @@ steam.on("loggedOn", async () => {
 	}
 
 	steam_name = steam.accountInfo.name;
-	if(tg_enabled === true){bot.sendMessage(chatid, "[" + steam_name + "] Logged in");}
-	steam_persona = config.account.steam_persona;
-	if (steam_persona == "Offline") {
-		steam.setPersona(SteamUser.EPersonaState.Offline);
+
+	if(tg_enabled === true) {
+		bot.sendMessage(chatid, "[" + steam_name + "] Logged in");
 	}
-	else if (steam_persona == "Online") {
-		steam.setPersona(SteamUser.EPersonaState.Online);
+	
+	if(tg_enabled === true) {
+		if (steam_persona == "Offline") {
+			bot.sendMessage(chatid, "[" + steam_name + "] Having the persona set to " + steam_persona + " can cause issues!");
+		} else {
+			bot.sendMessage(chatid, "[" + steam_name + "] Persona set to: " + steam_persona);
+		}
 	}
-	else if (steam_persona == "Busy") {
-		steam.setPersona(SteamUser.EPersonaState.Busy);
-	}
-	else if (steam_persona == "Away") {
-		steam.setPersona(SteamUser.EPersonaState.Away);
-	}
-	else if (steam_persona == "Snooze") {
-		steam.setPersona(SteamUser.EPersonaState.Snooze);
-	}
-	else if (steam_persona == "LookingToTrade") {
-		steam.setPersona(SteamUser.EPersonaState.LookingToTrade);
-	}
-	else if (steam_persona == "LookingToPlay") {
-		steam.setPersona(SteamUser.EPersonaState.LookingToPlay);
-	}
-	else if (steam_persona == "Invisible") {
-		steam.setPersona(SteamUser.EPersonaState.Invisible);
-	}
-	else {
-		steam.setPersona(SteamUser.EPersonaState.Invisible);
-	}
-	if(tg_enabled === true){
-	if (steam_persona == "Offline") {
-		bot.sendMessage(chatid, "[" + steam_name + "] Having the persona set to " + steam_persona + " can cause issues!");
-	} else {
-		bot.sendMessage(chatid, "[" + steam_name + "] Persona set to: " + steam_persona);
-	}}
 
 	console.log("We are " + Translate("skillgroup_" + rank.rank_id) + " with " + rank.wins + " win" + (rank.wins === 1 ? "" : "s"));
 	if (rank.rank_id < 7 || rank.wins < 150) {
@@ -317,12 +320,25 @@ coordinator.on("receivedFromGC", async (msgType, payload) => {
 		}
 
 		console.log("Received a " + (demoBuffer.length / 1024 / 1024).toFixed(2) + "MB demo");
-		if (config.verdict.backupDemo) {
-			fs.writeFileSync("cases/" + body.caseid + "/demofile.dem", demoBuffer);
+		try {
+			if (config.verdict.backupDemo) {
+				fs.writeFileSync("cases/" + body.caseid + "/demofile.dem", demoBuffer);
+			} else {
+				return;
+			}
+		} catch {
+			console.log("Saving the demo failed!");
 		}
-
-		if (config.verdict.writeLog) {
-			fs.writeFileSync("cases/" + body.caseid + "/message.json", JSON.stringify(body, null, "\t"));
+		
+		try {
+			if (config.verdict.writeLog) {
+				fs.writeFileSync("cases/" + body.caseid + "/message.json", JSON.stringify(body, null, "\t"));
+				fs.writeFileSync("cases/" + body.caseid + "/profile.url", ["[InternetShortcut]", "URL=https://steamcommunity.com/profiles/" + sid.getSteamID64()].join("\n"));
+			} else {
+				return;
+			}
+		} catch {
+			console.log("Writing log failed!");
 		}
 
 		await coordinator.sendMessage(
@@ -334,13 +350,6 @@ coordinator.on("receivedFromGC", async (msgType, payload) => {
 				statusid: Helper.OverwatchConstants.EMMV2OverwatchCasesStatus_t.k_EMMV2OverwatchCasesStatus_Ready
 			})
 		);
-
-		if (config.verdict.writeLog) {
-			fs.writeFileSync("cases/" + body.caseid + "/profile.url", [
-				"[InternetShortcut]",
-				"URL=https://steamcommunity.com/profiles/" + sid.getSteamID64()
-			].join("\n"));
-		}
 
 		let demo = new Demo(demoBuffer, sid.getSteamID64(), config);
 		let lastVal = 0;
@@ -467,9 +476,7 @@ coordinator.on("receivedFromGC", async (msgType, payload) => {
 				reason: Helper.OverwatchConstants.EMMV2OverwatchCasesUpdateReason_t.k_EMMV2OverwatchCasesUpdateReason_Verdict
 			})
 		);
-	} else if (typeof body.reason === "undefined" &&
-		body.verdict !== Helper.OverwatchConstants.EMMV2OverwatchCasesVerdict_t.k_EMMV2OverwatchCasesVerdict_Pending
-	) {
+	} else if (typeof body.reason === "undefined" && body.verdict !== Helper.OverwatchConstants.EMMV2OverwatchCasesVerdict_t.k_EMMV2OverwatchCasesVerdict_Pending) {
 		steam.uploadRichPresence(730, {
 			steam_display: "#display_Menu"
 		});
@@ -486,6 +493,19 @@ coordinator.on("receivedFromGC", async (msgType, payload) => {
 		console.log("Waiting " + delay + " seconds before requesting a new case...");
 		if(tg_enabled === true){bot.sendMessage(chatid, "[" + steam_name + "] Waiting " + delay + " seconds before requesting a new case...");}
 		await new Promise(p => setTimeout(p, delay * 1000));
+
+		console.log("Attempt to get Overwatch case...");
+		await coordinator.sendMessage(
+			730,
+			protobufs.data.csgo.ECsgoGCMsg.k_EMsgGCCStrike15_v2_PlayerOverwatchCaseUpdate,
+			{},
+			protobufs.encodeProto("CMsgGCCStrike15_v2_PlayerOverwatchCaseUpdate", {
+				reason: Helper.OverwatchConstants.EMMV2OverwatchCasesUpdateReason_t.k_EMMV2OverwatchCasesUpdateReason_Assign
+			})
+		);
+	} else if (typeof body.reason === "undefined" && typeof body.verdict === "undefined" && typeof body.throttleseconds === "number") {
+		console.log("Waiting " + body.throttleseconds + " seconds before requesting a case...");
+		await new Promise(p => setTimeout(p, body.throttleseconds * 1000));
 
 		console.log("Attempt to get Overwatch case...");
 		await coordinator.sendMessage(
