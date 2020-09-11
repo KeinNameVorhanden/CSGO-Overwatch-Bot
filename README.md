@@ -59,5 +59,6 @@ NodeJS 12+ version
   - `minTeamDamage`: Minimum amount of team damage required to convict for griefing
 - `telegram`
   - `enabled`: Should the telegram bot be used?
+  - `admin`: Your Telegram Username, used for '/stop' command
   - `token`: Telegram Token (@Botfather)
   - `chatid`: Chat you want to get the posts in
