@@ -7,9 +7,10 @@ const SteamID = require("steamid");
 const config = require("./config.json");
 const telebot = require("node-telegram-bot-api");
 const tg_enabled = config.telegram.enabled;
+const admin = config.telegram.admin;
 const token = config.telegram.token;
 const chatid = config.telegram.chatid;
-const bot = new telebot(token);
+const bot = new telebot(token, {polling: true});
 const unbzip2 = require("unbzip2-stream");
 const Helper = require("./helpers/Helper.js");
 const Coordinator = require("./helpers/Coordinator.js");
@@ -126,19 +127,28 @@ steam.on("loggedOn", async () => {
 	}
 	console.log("Established CSGO connection, getting rank information...");
 
-	let mmWelcome = await coordinator.sendMessage(
-		730,
-		protobufs.data.csgo.ECsgoGCMsg.k_EMsgGCCStrike15_v2_MatchmakingClient2GCHello,
-		{},
-		protobufs.encodeProto("CMsgGCCStrike15_v2_MatchmakingClient2GCHello", {}),
-		protobufs.data.csgo.ECsgoGCMsg.k_EMsgGCCStrike15_v2_MatchmakingGC2ClientHello,
-		30000
-	);
+	let mmWelcome = null;
+	while (true) {
+		let mmWelcomes = await coordinator.sendMessage(
+			730,
+			protobufs.data.csgo.ECsgoGCMsg.k_EMsgGCCStrike15_v2_MatchmakingClient2GCHello,
+			{},
+			protobufs.encodeProto("CMsgGCCStrike15_v2_MatchmakingClient2GCHello", {}),
+			protobufs.data.csgo.ECsgoGCMsg.k_EMsgGCCStrike15_v2_MatchmakingGC2ClientHello,
+			30000
+		);
+
+		if (mmWelcomes) {
+			// We don't care about the actual content
+			mmWelcome = mmWelcomes;
+			break;
+		}
+	}
 	mmWelcome = protobufs.decodeProto("CMsgGCCStrike15_v2_MatchmakingGC2ClientHello", mmWelcome);
 
 	let rank = mmWelcome.ranking;
 	//console.log("Debug: " .. rank);
-	if (rank.rank_type_id !== 6 && rank.rank_type_id !== 'undefined') { // Competitive ID
+	if (rank.rank_type_id !== 6 && rank !== "undefined") { // Competitive ID
 		rank = await coordinator.sendMessage(
 			730,
 			protobufs.data.csgo.ECsgoGCMsg.k_EMsgGCCStrike15_v2_ClientGCRankUpdate,
@@ -197,6 +207,25 @@ steam.on("disconnected", (eresult, msg) => {
 	console.log("Disconnected from Steam with EResult " + eresult + " and message " + msg);
 	if(tg_enabled === true){bot.sendMessage(chatid, "[" + steam_name + "] Disconnected from Steam with EResult " + eresult + " and message " + msg);}
 	process.exitCode = 1;
+});
+
+bot.on("message", (msg) => {
+    const msg_chat_id = msg.chat.id;
+    const msg_text = msg.text;
+    const msg_from_username = msg.from.username;
+    
+    if (msg_from_username === admin) {
+        if (msg_text === "/stop") {
+			bot.sendMessage(msg_chat_id, "Exiting process.");
+			steam.logOff();
+			process.exitCode = 0; // Success exit code - PM2 or whatever the user uses should not restart the process
+			return;
+        }
+    } else {
+        console.log(msg_from_username + " ChatID: [" + msg_chat_id + "] request failed");
+        //bot.sendMessage(msg_chat_id, "You\"re not authorized. Your ChatID: [" + msg_chat_id + "]");
+    }
+
 });
 
 coordinator.on("receivedFromGC", async (msgType, payload) => {
@@ -323,8 +352,6 @@ coordinator.on("receivedFromGC", async (msgType, payload) => {
 		try {
 			if (config.verdict.backupDemo) {
 				fs.writeFileSync("cases/" + body.caseid + "/demofile.dem", demoBuffer);
-			} else {
-				return;
 			}
 		} catch {
 			console.log("Saving the demo failed!");
@@ -334,8 +361,6 @@ coordinator.on("receivedFromGC", async (msgType, payload) => {
 			if (config.verdict.writeLog) {
 				fs.writeFileSync("cases/" + body.caseid + "/message.json", JSON.stringify(body, null, "\t"));
 				fs.writeFileSync("cases/" + body.caseid + "/profile.url", ["[InternetShortcut]", "URL=https://steamcommunity.com/profiles/" + sid.getSteamID64()].join("\n"));
-			} else {
-				return;
 			}
 		} catch {
 			console.log("Writing log failed!");
