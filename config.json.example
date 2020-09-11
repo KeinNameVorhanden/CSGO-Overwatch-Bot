@@ -1,8 +1,8 @@
 {
 	"account": {
-		"username": "SteamUsername",
-		"password": "SteamPassword",
-		"sharedSecret": "",
+		"username": "Steam Username",
+		"password": "Steam Password",
+		"sharedSecret": "XXXXXXXXXXXXXXXXXXXXXXXXXXX=",
 		"steam_persona": "Invisible"
 	},
 	"parsing": {
@@ -25,7 +25,7 @@
 	},
 	"verdict": {
 		"writeLog": true,
-		"backupDemo": true,
+		"backupDemo": false,
 		"printScoreboard": true,
 		"logWithEmojis": true,
 		"maxVerdicts": 0,
@@ -39,6 +39,7 @@
 	},
 	"telegram": {
 		"enabled": false,
+		"admin": "Your Telegram Username",
 		"token": "Telegram Token (@Botfather)",
 		"chatid": "Chat you want to get the posts in"
     }
