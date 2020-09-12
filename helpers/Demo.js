@@ -10,6 +10,9 @@ const tg_enabled = config.telegram.enabled;
 const token = config.telegram.token;
 const chatid = config.telegram.chatid;
 const bot = new telebot(token);
+const { Webhook, MessageBuilder } = require('discord-webhook-node');
+const dc_enabled = config.discord.enabled;
+const hook = new Webhook(config.discord.hook);
 
 const modes = [
 	undefined,
@@ -118,6 +121,15 @@ module.exports = class Demo {
 		console.log("\t- Griefing: " + (this.obj.verdict.teamharm ? yes : no));
 
 		if(tg_enabled === true){bot.sendMessage(chatid, "[" + steam_name + "] Verdict:\n\t-    Aimbot: " + (this.obj.verdict.aimbot ? yes : no) + "\n\t-    Wallhack: " + (this.obj.verdict.wallhack ? yes : no) + "\n\t-    Other: " + (this.obj.verdict.speedhack ? yes : no) + "\n\t-    Griefing: " + (this.obj.verdict.teamharm ? yes : no) + "\n https://steamcommunity.com/profiles/" + this.suspect64Id);}
+		if(dc_enabled === true){hook.send(new MessageBuilder()
+			.setTitle(this.suspect64Id)
+			.setAuthor('Overwatch Bot [' + steam_name + ']', 'https://ganja.taxi/C48852335352504028.png')
+			.setURL('https://steamcommunity.com/profiles/' + this.suspect64Id)
+			.addField('Status Message [1]', "[" + steam_name + "] Verdict:\n\t-    Aimbot: " + (this.obj.verdict.aimbot ? yes : no) + "\n\t-    Wallhack: " + (this.obj.verdict.wallhack ? yes : no) + "\n\t-    Other: " + (this.obj.verdict.speedhack ? yes : no) + "\n\t-    Griefing: " + (this.obj.verdict.teamharm ? yes : no) + "\n https://steamcommunity.com/profiles/" + this.suspect64Id, false)
+			.setColor('#ff0000')
+			.setFooter('Need support? @TrolluXe#1337', 'https://ganja.taxi/C48852335352504028.png')
+			.setTimestamp());
+		}
 	}
 
 	logScoreboard() {
@@ -172,11 +184,18 @@ module.exports = class Demo {
 					teamName[player.teamNumber]
 				].map((text) => {
 					if (player.steamID64 === this.suspect64Id) {
-						if(tg_enabled === true) {
-							if (sent_once === false) {
-								bot.sendMessage(chatid, "SteamID: " + player.steamID64 + "\nName: " + player.name + "\nKills: " + player.kills + "\nAssists: " + player.assists + "\nDeaths: " + player.deaths + "\nMVPs: " + player.mvps + "\nScore: " + player.score + "\nRank: " + ranks[player.rank] + "\nWins: " + player.wins);
-								sent_once = true;
+						if (sent_once === false) {
+							if(tg_enabled === true){bot.sendMessage(chatid, "SteamID: " + player.steamID64 + "\nName: " + player.name + "\nKills: " + player.kills + "\nAssists: " + player.assists + "\nDeaths: " + player.deaths + "\nMVPs: " + player.mvps + "\nScore: " + player.score + "\nRank: " + ranks[player.rank] + "\nWins: " + player.wins)};
+							if(dc_enabled === true){hook.send(new MessageBuilder()
+									.setTitle(this.suspect64Id)
+									.setAuthor('Overwatch Bot [' + steam_name + ']', 'https://ganja.taxi/C48852335352504028.png')
+									.setURL('https://steamcommunity.com/profiles/' + this.suspect64Id)
+									.addField('Status Message [2]', "SteamID: " + player.steamID64 + "\nName: " + player.name + "\nKills: " + player.kills + "\nAssists: " + player.assists + "\nDeaths: " + player.deaths + "\nMVPs: " + player.mvps + "\nScore: " + player.score + "\nRank: " + ranks[player.rank] + "\nWins: " + player.wins)
+									.setColor('#ff0000')
+									.setFooter('Need support? @TrolluXe#1337', 'https://ganja.taxi/C48852335352504028.png')
+									.setTimestamp());
 							}
+						sent_once = true;
 						}
 						return colors.yellow(text);
 					}
