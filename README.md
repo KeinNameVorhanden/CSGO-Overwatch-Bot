@@ -62,3 +62,6 @@ NodeJS 12+ version
   - `admin`: Your Telegram Username, used for '/stop' command
   - `token`: Telegram Token (@Botfather)
   - `chatid`: Chat you want to get the posts in
+- `discord`
+  - `enabled`: Should the discord bot be used?
+  - `hook`: Discord Webhook URL
