@@ -44,7 +44,7 @@
 		"chatid": "Chat you want to get the posts in"
     },
 	"discord": {
-		"enabled": true,
+		"enabled": false,
 		"hook": "discord webhook url"
     }
 }
