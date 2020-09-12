@@ -30,6 +30,12 @@ let timings = {
 	Parsing: 0
 };
 
+function ms2readable(millis) {
+	var minutes = Math.floor(millis / 60000);
+	var seconds = ((millis % 60000) / 1000).toFixed(0);
+	return (seconds == 60 ? (minutes+1) + ":00" : minutes + ":" + (seconds < 10 ? "0" : "") + seconds);
+}
+
 (async () => {
 	console.log("Checking protobufs...");
 	let foundProtobufs = Helper.VerifyProtobufs();
@@ -407,6 +413,8 @@ coordinator.on("receivedFromGC", async (msgType, payload) => {
 		process.stdout.write("\n");
 		timings.Parsing = Date.now() - timings.Parsing;
 
+
+
 		// Force convict?
 		if (typeof config.parsing.forceConvictOnPreviousBan === "number" && config.parsing.forceConvictOnPreviousBan >= 0) {
 			data.forceConvictEnabled = false;
@@ -515,7 +523,7 @@ coordinator.on("receivedFromGC", async (msgType, payload) => {
 
 		// Wait this long before requesting a new case
 		let delay = body.throttleseconds || 10;
-		console.log("Waiting " + delay + " seconds before requesting a new case...");
+		console.log("Waiting " + ms2readable(delay) + " seconds before requesting a new case...");
 		if(tg_enabled === true){bot.sendMessage(chatid, "[" + steam_name + "] Waiting " + delay + " seconds before requesting a new case...");}
 		await new Promise(p => setTimeout(p, delay * 1000));
 
@@ -529,7 +537,7 @@ coordinator.on("receivedFromGC", async (msgType, payload) => {
 			})
 		);
 	} else if (typeof body.reason === "undefined" && typeof body.verdict === "undefined" && typeof body.throttleseconds === "number") {
-		console.log("Waiting " + body.throttleseconds + " seconds before requesting a case...");
+		console.log("Waiting " + ms2readable(body.throttleseconds) + " seconds before requesting a case...");
 		await new Promise(p => setTimeout(p, body.throttleseconds * 1000));
 
 		console.log("Attempt to get Overwatch case...");
