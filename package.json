@@ -1,6 +1,6 @@
 {
   "name": "csgo-overwatch-bot",
-  "version": "2.1.5",
+  "version": "2.2.0",
   "description": "",
   "repository": {
     "type": "git",
@@ -20,6 +20,7 @@
     "cli-table3": "^0.6.0",
     "colors": "^1.4.0",
     "demofile": "^1.5.0",
+    "discord-webhook-node": "^1.1.8",
     "inquirer": "^7.3.3",
     "node-fetch": "^2.6.0",
     "node-telegram-bot-api": "^0.50.0",
