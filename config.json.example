@@ -42,5 +42,9 @@
 		"admin": "Your Telegram Username",
 		"token": "Telegram Token (@Botfather)",
 		"chatid": "Chat you want to get the posts in"
+    },
+	"discord": {
+		"enabled": true,
+		"hook": "discord webhook url"
     }
 }
